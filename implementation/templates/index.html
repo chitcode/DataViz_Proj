@@ -1,0 +1,53 @@
+<html>
+<head>
+  <title>
+    Product Flow
+  </title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width">
+  <script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <!-- Load billboard.js with base(or theme) style -->
+  <link rel="stylesheet" href="/static/d3-context-menu.css" />
+  <script src="/static/d3-context-menu.js"></script>
+
+</head>
+<body >
+  <div>
+  <table width="20%" style="margin: 0 auto; solid;text-align:center">
+  <tr>
+    <td>
+       &nbsp  &nbsp
+    </td>
+    <td>
+      Category
+    </td>
+    <td>
+      <input id="cat_name" type="text">
+    </td>
+    <td>
+      <input type="button", value="Submit", onclick="updateViz();">
+    </td>
+    <td style="width:25px">
+      <img src="/static/index.fidget-spinner.gif" id="loader" style="width:20px;height:20px;">
+    </td>
+  </tr>
+  </table>
+</div>
+<!-- <div id="svg"> -->
+</div>
+<center>
+  <div id="chart"></div>
+</center>
+  <!-- Create a div where the graph will take place -->
+
+  <div id="maintooltip" class="tooltip" style="opacity:0"></div>
+
+
+</body>
+<!-- New plot -->
+
+
+  <script src="/static/treemap_script.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+  </html>
