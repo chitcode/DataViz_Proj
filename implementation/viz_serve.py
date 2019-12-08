@@ -68,7 +68,7 @@ def find_all_ancestors(id):
 #             print(id,'root')
             ancestors = {}
             ancestors['id'] = 0
-            ancestors['name'] = 'root'
+            ancestors['name'] = 'All Categories'
             ancestors['value'] = int(0)
             ancestors['children'] = child
             return ancestors
