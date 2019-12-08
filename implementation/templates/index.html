@@ -6,7 +6,10 @@
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width">
   <script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
-  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://d3js.org/d3-color.v1.min.js"></script>
+<script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
   <!-- Load billboard.js with base(or theme) style -->
   <link rel="stylesheet" href="/static/d3-context-menu.css" />
   <script src="/static/d3-context-menu.js"></script>
@@ -36,8 +39,11 @@
 </div>
 <!-- <div id="svg"> -->
 </div>
+<nav>
+	<div class="up">&larr; UP</div>
+</nav>
 <center>
-  <div id="chart"></div>
+  <div id="chart"/>
 </center>
   <!-- Create a div where the graph will take place -->
 

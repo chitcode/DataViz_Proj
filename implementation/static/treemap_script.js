@@ -1,266 +1,160 @@
-window.addEventListener('message', function(e) {
-    var opts = e.data.opts,
-        data = e.data.data;
 
-    return main(opts, data);
-});
 
-var defaults = {
-    margin: {top: 24, right: 0, bottom: 0, left: 0},
-    rootname: "TOP",
-    format: ",d",
-    title: "",
-    width: 960,
-    height: 500
-};
+var cat_searched;
 
-function main(o, data) {
-  console.log(data);
-  var root,
-      opts = $.extend(true, {}, defaults, o),
-      formatNumber = d3.format(opts.format),
-      rname = opts.rootname,
-      margin = opts.margin,
-      theight = 36 + 16;
-
-  $('#chart').width(opts.width).height(opts.height);
-  var width = opts.width - margin.left - margin.right,
-      height = opts.height - margin.top - margin.bottom - theight,
-      transitioning;
-
-  var color = d3.scale.category20c();
-
-  var x = d3.scale.linear()
-      .domain([0, width])
-      .range([0, width]);
-
-  var y = d3.scale.linear()
-      .domain([0, height])
-      .range([0, height]);
-
-  var treemap = d3.layout.treemap(data)
-      .children(function(d, depth) { return depth ? null : d._children; })
-      .sort(function(a, b) { return a.value - b.value; })
-      .ratio(height / width * 0.5 * (1 + Math.sqrt(5)))
-      .round(false);
-
-  var svg = d3.select("#chart").append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.bottom + margin.top)
-      .style("margin-left", -margin.left + "px")
-      .style("margin.right", -margin.right + "px")
-    .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-      .style("shape-rendering", "crispEdges");
-
-  var grandparent = svg.append("g")
-      .attr("class", "grandparent");
-
-  grandparent.append("rect")
-      .attr("y", -margin.top)
-      .attr("width", width)
-      .attr("height", margin.top);
-
-  grandparent.append("text")
-      .attr("x", 6)
-      .attr("y", 6 - margin.top)
-      .attr("dy", ".75em");
-
-  if (opts.title) {
-    $("#chart").prepend("<p class='title'>" + opts.title + "</p>");
-  }
-
-  if (data instanceof Array) {
-    root = { key: rname, values: data };
-  } else {
-    console.log("called this");
-    console.log(data);
-     root = d3.hierarchy(data);
-  }
-
-  initialize(root);
-  accumulate(root);
-  layout(root);
-  console.log(root);
-  display(root);
-
-  if (window.parent !== window) {
-    var myheight = document.documentElement.scrollHeight || document.body.scrollHeight;
-    window.parent.postMessage({height: myheight}, '*');
-  }
-
-  function initialize(root) {
-    console.log(root);
-    root.x = root.y = 0;
-    root.dx = width;
-    root.dy = height;
-    root.depth = 0;
-  }
-
-  // Aggregate the values for internal nodes. This is normally done by the
-  // treemap layout, but not here because of our custom implementation.
-  // We also take a snapshot of the original children (_children) to avoid
-  // the children being overwritten when when layout is computed.
-  function accumulate(d) {
-    // return (d._children = d.values)
-    //     ? d.value = d.values.reduce(function(p, v) { return p + accumulate(v); }, 0)
-    //     : d.value;
-    d._children = d.values;
-    console.log(d);
-    return d._children
-  }
-
-  // Compute the treemap layout recursively such that each group of siblings
-  // uses the same size (1×1) rather than the dimensions of the parent cell.
-  // This optimizes the layout for the current zoom state. Note that a wrapper
-  // object is created for the parent node for each group of siblings so that
-  // the parent’s dimensions are not discarded as we recurse. Since each group
-  // of sibling was laid out in 1×1, we must rescale to fit using absolute
-  // coordinates. This lets us use a viewport to zoom.
-  function layout(d) {
-    console.log(d);
-    if (d._children) {
-      treemap.nodes({_children: d._children});
-      d._children.forEach(function(c) {
-        c.x = d.x + c.x * d.dx;
-        c.y = d.y + c.y * d.dy;
-        c.dx *= d.dx;
-        c.dy *= d.dy;
-        c.parent = d;
-        layout(c);
-      });
+function updateViz(){
+  var catName = document.getElementById('cat_name').value;
+  cat_searched = catName;
+if(catName !== null && catName !== ""){
+    var request = new XMLHttpRequest();
+    const url='/getnodes?catName='+catName;
+    console.log(url);
+    request.open("GET", url);
+    request.send();
+    loading();
+    request.onreadystatechange = (e) => {
+      treeData = JSON.parse(request.responseText);
+      //console.log(treeData);
+      if(!treeData["error"]){
+        loading();
+        document.getElementById("loader").style.display = "none";
+        createViz(treeData);
+      }else{
+        loading();
+        document.getElementById("loader").style.display = "none";
+        alert("Sorry!! Product Not Found");
+      }
     }
-  }
-
-  function display(d) {
-    grandparent
-        .datum(d.parent)
-        .on("click", transition)
-      .select("text")
-        .text(name(d));
-
-    var g1 = svg.insert("g", ".grandparent")
-        .datum(d)
-        .attr("class", "depth");
-
-    console.log(d);
-    var g = g1.selectAll("g")
-        .data(d._children)
-      .enter().append("g");
-
-    g.filter(function(d) { return d._children; })
-        .classed("children", true)
-        .on("click", transition);
-
-    var children = g.selectAll(".child")
-        .data(function(d) { return d._children || [d]; })
-      .enter().append("g");
-
-    children.append("rect")
-        .attr("class", "child")
-        .call(rect)
-      .append("title")
-        .text(function(d) { return d.key + " (" + formatNumber(d.value) + ")"; });
-    children.append("text")
-        .attr("class", "ctext")
-        .text(function(d) { return d.key; })
-        .call(text2);
-
-    g.append("rect")
-        .attr("class", "parent")
-        .call(rect);
-
-    var t = g.append("text")
-        .attr("class", "ptext")
-        .attr("dy", ".75em")
-
-    t.append("tspan")
-        .text(function(d) { return d.key; });
-    t.append("tspan")
-        .attr("dy", "1.0em")
-        .text(function(d) { return formatNumber(d.value); });
-    t.call(text);
-
-    g.selectAll("rect")
-        .style("fill", function(d) { return color(d.key); });
-
-    function transition(d) {
-      if (transitioning || !d) return;
-      transitioning = true;
-
-      var g2 = display(d),
-          t1 = g1.transition().duration(750),
-          t2 = g2.transition().duration(750);
-
-      // Update the domain only after entering new elements.
-      x.domain([d.x, d.x + d.dx]);
-      y.domain([d.y, d.y + d.dy]);
-
-      // Enable anti-aliasing during the transition.
-      svg.style("shape-rendering", null);
-
-      // Draw child nodes on top of parent nodes.
-      svg.selectAll(".depth").sort(function(a, b) { return a.depth - b.depth; });
-
-      // Fade-in entering text.
-      g2.selectAll("text").style("fill-opacity", 0);
-
-      // Transition to the new view.
-      t1.selectAll(".ptext").call(text).style("fill-opacity", 0);
-      t1.selectAll(".ctext").call(text2).style("fill-opacity", 0);
-      t2.selectAll(".ptext").call(text).style("fill-opacity", 1);
-      t2.selectAll(".ctext").call(text2).style("fill-opacity", 1);
-      t1.selectAll("rect").call(rect);
-      t2.selectAll("rect").call(rect);
-
-      // Remove the old node when the transition is finished.
-      t1.remove().each("end", function() {
-        svg.style("shape-rendering", "crispEdges");
-        transitioning = false;
-      });
-    }
-
-    return g;
-  }
-
-  function text(text) {
-    text.selectAll("tspan")
-        .attr("x", function(d) { return x(d.x) + 6; })
-    text.attr("x", function(d) { return x(d.x) + 6; })
-        .attr("y", function(d) { return y(d.y) + 6; })
-        .style("opacity", function(d) { return this.getComputedTextLength() < x(d.x + d.dx) - x(d.x) ? 1 : 0; });
-  }
-
-  function text2(text) {
-    text.attr("x", function(d) { return x(d.x + d.dx) - this.getComputedTextLength() - 6; })
-        .attr("y", function(d) { return y(d.y + d.dy) - 6; })
-        .style("opacity", function(d) { return this.getComputedTextLength() < x(d.x + d.dx) - x(d.x) ? 1 : 0; });
-  }
-
-  function rect(rect) {
-    rect.attr("x", function(d) { return x(d.x); })
-        .attr("y", function(d) { return y(d.y); })
-        .attr("width", function(d) { return x(d.x + d.dx) - x(d.x); })
-        .attr("height", function(d) { return y(d.y + d.dy) - y(d.y); });
-  }
-
-  function name(d) {
-    return d.parent
-        ? name(d.parent) + " / " + d.key + " (" + formatNumber(d.value) + ")"
-        : d.key + " (" + formatNumber(d.value) + ")";
   }
 }
 
-if (window.location.hash === "") {
-    d3.json("static/countries.json", function(err, res) {
-        if (!err) {
-            console.log(res);
-            var data = res;
-            console.log(data);
-            // var data = d3.nest().key(function(d) { return d.region; }).key(function(d) { return d.subregion; }).entries(res);
-            main({title: "Top Categories"},data);
-        }else{
-          console.log(err);
-        }
-    });
+  document.getElementById("loader").style.display = "none";
+  var loading = function() {
+      var x = document.getElementById("loader");
+      if (x.style.display === "none") {
+        x.style.display = "block";
+      } else {
+        x.style.display = "none";
+      }
+    }
+
+// https://codepen.io/znak/pen/qapRkQ
+// https://codepen.io/znak/details/qapRkQ/
+
+var margin = {top: 20, right: 90, bottom: 30, left: 90},
+    width_svg = 1260 - margin.left - margin.right,
+    height_svg = 600 - margin.top - margin.bottom;
+
+
+var width = height = 100; // % of the parent element
+
+var x = d3.scaleLinear().domain([0, width]).range([0, width]);
+var y = d3.scaleLinear().domain([0, height]).range([0, height]);
+
+var color = d3.scaleOrdinal()
+        .range(d3.schemeDark2
+            .map(function(c) {
+                c = d3.rgb(c);
+                //c.opacity = 0.5;
+                return c;
+            })
+        )
+
+var color_bg = d3.scaleOrdinal()
+        .range(d3.schemeSet3
+            .map(function(c) {
+                c = d3.rgb(c);
+                return c;
+            })
+        );
+
+
+var treemap = d3.treemap()
+        .size([width, height])
+        .padding(1)
+        .round(false); //true
+
+// var data = {"id": 0, "name": "root", "value": 0, "children": [{"id": 4, "name": "Clothing, Shoes & Jewelry", "value": 1503384, "children": [{"id": 237, "name": "Men", "value": 371334, "children": [{"id": 1417, "name": "Shoes", "value": 95218, "children": [{"id": 7519, "name": "Boots", "value": 13991, "children": []}]}, {"id": 7479, "name": "Surf, Skate & Street", "value": 27727, "children": [{"id": 7480, "name": "Shoes", "value": 9158, "children": [{"id": 7520, "name": "Boots", "value": 1287, "children": []}]}]}]}, {"id": 1538, "name": "Boys", "value": 60338, "children": [{"id": 8193, "name": "Shoes", "value": 16831, "children": [{"id": 8194, "name": "Boots", "value": 3119, "children": []}]}]}, {"id": 5, "name": "Girls", "value": 78291, "children": [{"id": 5066, "name": "Shoes", "value": 21518, "children": [{"id": 8326, "name": "Boots", "value": 4510, "children": []}]}]}, {"id": 231, "name": "Women", "value": 837929, "children": [{"id": 1648, "name": "Shoes", "value": 245248, "children": [{"id": 8498, "name": "Boots", "value": 58526, "children": []}]}]}, {"id": 992, "name": "Baby", "value": 43271, "children": [{"id": 996, "name": "Baby Boys", "value": 19622, "children": [{"id": 7794, "name": "Shoes", "value": 1172, "children": [{"id": 14470, "name": "Boots", "value": 134, "children": []}]}]}, {"id": 993, "name": "Baby Girls", "value": 28667, "children": [{"id": 7792, "name": "Shoes", "value": 1700, "children": [{"id": 14847, "name": "Boots", "value": 212, "children": []}]}]}]}, {"id": 17190, "name": "Motorcycle & ATV Casual Footwear", "value": 1673, "children": [{"id": 17842, "name": "Boots", "value": 103, "children": []}]}, {"id": 14945, "name": "WF Inheritance Test Women\'s CK Custom Store", "value": 907, "children": [{"id": 19070, "name": "Boots", "value": 174, "children": []}]}]}, {"id": 10, "name": "Sports & Outdoors", "value": 532197, "children": [{"id": 2060, "name": "Snow Sports", "value": 11966, "children": [{"id": 2061, "name": "Skiing", "value": 8355, "children": [{"id": 2062, "name": "Downhill Skiing", "value": 463, "children": [{"id": 9525, "name": "Boots", "value": 125, "children": []}]}, {"id": 6065, "name": "Cross-Country Skiing", "value": 154, "children": [{"id": 9854, "name": "Boots", "value": 71, "children": []}]}, {"id": 12540, "name": "Telemark Skiing", "value": 26, "children": [{"id": 14919, "name": "Boots", "value": 22, "children": []}]}, {"id": 26721, "name": "Alpine Touring", "value": 25, "children": [{"id": 29174, "name": "Boots", "value": 1, "children": []}]}]}, {"id": 8025, "name": "Snowboarding", "value": 2399, "children": [{"id": 18467, "name": "Boots", "value": 173, "children": []}]}]}]}, {"id": 107, "name": "Automotive", "value": 331090, "children": [{"id": 739, "name": "Replacement Parts", "value": 81121, "children": [{"id": 4083, "name": "Transmission & Drive Train", "value": 2950, "children": [{"id": 4084, "name": "Clutches & Parts", "value": 803, "children": [{"id": 11146, "name": "Boots", "value": 75, "children": []}]}]}]}, {"id": 8922, "name": "Performance Parts & Accessories", "value": 22537, "children": [{"id": 11162, "name": "Drive Train", "value": 941, "children": [{"id": 11251, "name": "Clutches & Parts", "value": 388, "children": [{"id": 11252, "name": "Boots", "value": 22, "children": []}]}]}]}, {"id": 422, "name": "Motorcycle & Powersports", "value": 47699, "children": [{"id": 1680, "name": "Protective Gear", "value": 17169, "children": [{"id": 14409, "name": "Footwear", "value": 883, "children": [{"id": 14410, "name": "Boots", "value": 609, "children": []}]}]}]}]}, {"id": 356, "name": "Pet Supplies", "value": 110707, "children": [{"id": 4135, "name": "Horses", "value": 2424, "children": [{"id": 12238, "name": "Boots & Wraps", "value": 205, "children": [{"id": 12239, "name": "Boots", "value": 197, "children": []}]}]}, {"id": 357, "name": "Dogs", "value": 72403, "children": [{"id": 6738, "name": "Apparel & Accessories", "value": 9919, "children": [{"id": 11333, "name": "Boots & Paw Protectors", "value": 933, "children": [{"id": 26798, "name": "Boots", "value": 5, "children": []}]}]}]}]}]};
+
+
+var chart = d3.select("#chart").append('svg')
+      .attr("width", width_svg + margin.left + margin.right)
+      .attr("height", height_svg + margin.bottom + margin.top)
+      .style("margin-left", -margin.left + "px")
+      .style("margin.right", -margin.right + "px")
+      .style("border", "2px solid orange")
+      .append("foreignObject")
+      .attr("width", width_svg + margin.left + margin.right)
+      .attr("height", height_svg + margin.bottom + margin.top);
+
+// .attr("width", width + margin.right + margin.left)
+// .attr("height", height + margin.top + margin.bottom);
+
+function createViz(data){
+var nodes = d3.hierarchy(data)
+        .sum(function(d) { console.log(d); return d.value ? 1 : 0; });
+        //.sort(function(a, b) { return b.height - a.height || b.value - a.value });
+
+var currentDepth = 0;
+
+treemap(nodes);
+var cells = chart
+    .selectAll(".node")
+    .data(nodes.descendants())
+    .enter()
+    .append("xhtml:div")
+    .attr("class", function(d) { return "node level-" + d.depth; })
+    .attr("title", function(d) { return d.data.name ? d.data.name+d.data.value : "null"; });
+
+cells
+    .style("left", function(d) { return x(d.x0) + "%"; })
+    .style("top", function(d) { return y(d.y0) + "%"; })
+    .style("width", function(d) { return x(d.x1) - x(d.x0) + "%"; })
+    .style("height", function(d) { return y(d.y1) - y(d.y0) + "%"; })
+    //.style("background-image", function(d) { return d.value ? imgUrl + d.value : ""; })
+    //.style("background-image", function(d) { return d.value ? "url(http://placekitten.com/g/300/300)" : "none"; })
+    //.style("background-color", function(d) { while (d.depth > 5) d = d.parent; return color(d.data.name); })
+    .style("background-color", function(d) { if(d.data.name == cat_searched){return color(d.data.name);} else{return color_bg(d.data.name); }})
+    .style("boarder-color", function(d){return color(d.data.name)})
+    .on("click", zoom)
+    .append("p")
+    .attr("class", "label")
+    .text(function(d) { return d.data.name ? d.data.name : "---"; });
+    //.style("font-size", "")
+    //.style("opacity", function(d) { return isOverflowed( d.parent ) ? 1 : 0; });
+
+var parent = d3.select(".up")
+    .datum(nodes)
+    .on("click", zoom);
+
+    function zoom(d) { // http://jsfiddle.net/ramnathv/amszcymq/
+
+        console.log('clicked: ' + d.data.name + ', depth: ' + d.depth);
+
+        currentDepth = d.depth;
+        parent.datum(d.parent || nodes);
+
+        x.domain([d.x0, d.x1]);
+        y.domain([d.y0, d.y1]);
+
+        var t = d3.transition()
+            .duration(800)
+            .ease(d3.easeCubicOut);
+
+        cells
+            .transition(t)
+            .style("left", function(d) { return x(d.x0) + "%"; })
+            .style("top", function(d) { return y(d.y0) + "%"; })
+            .style("width", function(d) { return x(d.x1) - x(d.x0) + "%"; })
+            .style("height", function(d) { return y(d.y1) - y(d.y0) + "%"; });
+
+        cells // hide this depth and above
+            .filter(function(d) { return d.ancestors(); })
+            .classed("hide", function(d) { return d.children ? true : false });
+
+        cells // show this depth + 1 and below
+            .filter(function(d) { return d.depth > currentDepth; })
+            .classed("hide", false);
+
+    }
 }
