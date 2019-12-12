@@ -68,18 +68,32 @@ var color_bg = d3.scaleOrdinal()
             })
         );
 
-        var d3_category20 = ['#00d618', '#02b72e', '#0cc0aa', '#0db293', '#35afa6', '#4c93e9',
-       '#59d13e', '#5ac4f8', '#6895bc', '#6cbe55', '#6ec1f8', '#7487fb',
-       '#769d31', '#8cb3ab', '#8e80fb', '#a08d7f', '#a88c65', '#abc34d',
-       '#ac8bf8', '#b98829', '#ba865c', '#ca9519', '#cc9cc7', '#d759f3',
-       '#d783b9', '#d85ee1', '#d9acc2', '#dc58ea', '#e0819f', '#e2712e',
-       '#e76cef', '#e9af2a', '#ef6268', '#f2ac18', '#f37e2f', '#f5603a',
-       '#fa1bfc', '#fb4e93', '#fb7810', '#fe16f4', '#ff4d82'].map(function(c) {
-            c = d3.rgb(c);
-            return c;
-        });
-var color_bg_more = d3.scaleOrdinal().range(d3_category20);
+  // var d3_category20 = ['#00d618', '#02b72e', '#0cc0aa', '#0db293', '#35afa6', '#4c93e9',
+  //      '#59d13e', '#5ac4f8', '#6895bc', '#6cbe55', '#6ec1f8', '#7487fb',
+  //      '#769d31', '#8cb3ab', '#8e80fb', '#a08d7f', '#a88c65', '#abc34d',
+  //      '#ac8bf8', '#b98829', '#ba865c', '#ca9519', '#cc9cc7', '#d759f3',
+  //      '#d783b9', '#d85ee1', '#d9acc2', '#dc58ea', '#e0819f', '#e2712e',
+  //      '#e76cef', '#e9af2a', '#ef6268', '#f2ac18', '#f37e2f', '#f5603a',
+  //      '#fa1bfc', '#fb4e93', '#fb7810', '#fe16f4', '#ff4d82'].map(function(c) {
+  //           c = d3.rgb(c);
+  //           return c;
+  //       });
+// var color_bg_more = d3.scaleOrdinal().range(d3_category20);
 
+var menu = [
+    {
+    	title: 'Move Up',
+    	action: function(elm, d, i) {
+        document.getElementById("up").click();
+    	}
+    },
+    {
+    	title: 'Show All Children',
+    	action: function(elm, d, i) {
+        create_subViz(d.data.id);
+    	}
+    }
+  ]
 
 var treemap = d3.treemap()
         .size([width, height])
@@ -91,7 +105,6 @@ var chart = d3.select("#chart").append('svg')
       .attr("height", height_svg + margin.bottom + margin.top)
       .style("margin-left", -margin.left + "px")
       .style("margin.right", -margin.right + "px")
-      .style("border", "2px solid orange")
       .append("foreignObject")
       .attr("width", width_svg + margin.left + margin.right)
       .attr("height", height_svg + margin.bottom + margin.top);
@@ -110,8 +123,6 @@ function makePath(d){
   path = path+d.data.name;
   return path;
 }
-// .attr("width", width + margin.right + margin.left)
-// .attr("height", height + margin.top + margin.bottom);
 
 function createViz(data){
 var nodes = d3.hierarchy(data)
@@ -148,16 +159,14 @@ var cells = chart
             div.transition()
                 .duration(500)
                 .style("opacity", 0);
-        });
+        })
+        .on('contextmenu', d3.contextMenu(menu));
 
 cells
     .style("left", function(d) { return x(d.x0) + "%"; })
     .style("top", function(d) { return y(d.y0) + "%"; })
     .style("width", function(d) { return x(d.x1) - x(d.x0) + "%"; })
     .style("height", function(d) { return y(d.y1) - y(d.y0) + "%"; })
-    //.style("background-image", function(d) { return d.value ? imgUrl + d.value : ""; })
-    //.style("background-image", function(d) { return d.value ? "url(http://placekitten.com/g/300/300)" : "none"; })
-    //.style("background-color", function(d) { while (d.depth > 5) d = d.parent; return color(d.data.name); })
     .style("background-color", function(d) { if(d.data.name == cat_searched){return color(d.data.name);} else{return color_bg(d.data.name); }})
     .style("boarder-color", function(d){return color(d.data.name)})
     .on("click", zoom)
@@ -217,3 +226,74 @@ var parent = d3.select(".up")
 
     }
 }
+
+
+function create_subViz(catId){
+  if(catId !== null && catId !== ""){
+      var request = new XMLHttpRequest();
+      const url='/getChildren?catId='+catId;
+      console.log(url);
+      request.open("GET", url);
+      request.send();
+      loading();
+      request.onreadystatechange = (e) => {
+        var subVizData = JSON.parse(request.responseText);
+        console.log(subVizData);
+        create_subViz_map(subVizData);
+        if(!subVizData["error"]){
+          loading();
+          document.getElementById("loader").style.display = "none";
+          // createViz(treeData);
+        }else{
+          loading();
+          document.getElementById("loader").style.display = "none";
+          alert("Sorry!! Product Not Found");
+        }
+      }
+    }
+}
+
+var subViz_width = 960,
+    subViz_height = 500;
+
+var subdiv = d3.select("#subChart").append("svg")
+        .style("position", "relative")
+        .style("width", subViz_width + "px")
+        .style("height", subViz_height + "px")
+        .append("foreignObject")
+        .style("width", subViz_width + "px")
+        .style("height", subViz_height + "px");
+
+function create_subViz_map(subVizData){
+  var sub_x = d3.scaleLinear().domain([0, subViz_width]).range([0, subViz_width]);
+  var sub_y = d3.scaleLinear().domain([0, subViz_height]).range([0, subViz_height]);
+
+  var sub_treemap = d3.treemap()
+      .size([subViz_width, subViz_height])
+      .padding(4)
+      .round(true);
+
+  subdiv.selectAll("div")
+          .remove()
+          .exit()
+          .transition()
+          .duration(700);
+
+  var sub_nodes = d3.hierarchy(subVizData)
+                  .sum(function(d) {return d.value ? 1 : 0; });
+
+  treemap(sub_nodes);
+  console.log(sub_nodes);
+
+  subdiv.selectAll(".node")
+        .data(sub_nodes.descendants())
+        .enter()
+        .append("xhtml:div")
+        .attr("class","nodeSubtree")
+        .style("left", function(d) { return d.x0 + "%"; })
+        .style("top", function(d) { return d.y0 + "%"; })
+        .style("width", function(d) { return sub_x(d.x1) - sub_x(d.x0) + "%"; })
+        .style("height", function(d) { return sub_y(d.y1) - sub_y(d.y0) + "%"; })
+        .style("background", function(d) {return color_bg(d.data.name)})
+        .text(function(d) { return d.data.name; });
+      }

@@ -140,3 +140,26 @@ div.tooltip {
 	font-variant: normal;
 	text-transform: none;
 }
+
+.nodeSubtree{
+	position: absolute;
+	background: transparent url('') no-repeat 50% / cover;
+	/* border: 1px sold; */
+	overflow: hidden;
+	opacity: 0.99;
+	transition: opacity .8s;
+	/* margin: 10; */
+	cursor: pointer;
+	box-shadow:0 0 8px black;
+	.label {
+		display: inline;
+		font-family: sans-serif;
+		color: hsla(0,0,100,.6);
+		//white-space: nowrap;
+		position: absolute;
+		top: 0%;
+		left: 50%;
+		transform: translateX(-50%) translateY(-50%);
+		transition: color .4s, opacity .8s, filter .8s;
+	}
+}

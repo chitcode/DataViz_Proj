@@ -48,6 +48,21 @@ def get_nodes():
     else:
         return {"error":"error"}
 
+@app.route('/getChildren',methods=['GET'])
+def get_children():
+    catId = request.args.get("catId", None)
+    # add var for previous
+    print("catId :::::",catId)
+    if catId is not None:
+        try:
+            data_dict = get_all_children(int(catId))
+            return jsonify(data_dict)
+        except Exception as e:
+            print(e)
+            return jsonify({"error":"error"})
+            raise(e)
+    else:
+        return {"error":"error"}
 
 def find_all_ancestors(id):
     child = []
@@ -121,6 +136,33 @@ def data_for_plot(catName):
     all_trees = find_all_hierarchy(catName)
     merged_tree = merge_all_trees(all_trees)
     return merged_tree
+
+def get_all_children(catId):
+    parent = {}
+    children = []
+    children_ids = eval(data_csv.children.loc[data_csv.id == catId].values[0])
+    parent_id = int(catId);
+    parent_name = data_csv.name[data_csv.id == catId].values[0]
+    parent_sub_roduct_count = data_csv.subtreeProductCount[data_csv.id == catId].values[0]
+    parent_roduct_count = data_csv.productCount[data_csv.id == catId].values[0]
+
+    for child_id in children_ids:
+        cat_name = data_csv.name[data_csv.id == child_id].values[0]
+        sub_roduct_count = data_csv.subtreeProductCount[data_csv.id == child_id].values[0]
+        roduct_count = data_csv.productCount[data_csv.id == child_id].values[0]
+
+        child = {}
+        child['id'] = int(child_id)
+        child['name'] = cat_name
+        child['value'] = int(sub_roduct_count)
+        child['roduct_count'] = int(roduct_count)
+        children.append(child)
+    parent['id'] = parent_id
+    parent['name'] = parent_name
+    parent['value'] = int(parent_sub_roduct_count)
+    parent['product_count'] = int(parent_roduct_count)
+    parent['children'] = children
+    return parent
 
 if __name__ == '__main__':
     init();
