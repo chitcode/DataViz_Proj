@@ -71,13 +71,16 @@ def find_all_ancestors(id):
         parent_id = data_csv.parent[data_csv.id == id].values[0]
         productCount = data_csv.subtreeProductCount[data_csv.id == id].values[0]
         numChildren = data_csv.numChildren[data_csv.id == id].values[0]
+        morefound = np.sum(data_csv.name == cat_name)
 
         ancestors = {}
         ancestors['id'] = int(id)
         ancestors['name'] = cat_name
         ancestors['value'] = int(productCount)
         ancestors['numChildren'] = int(numChildren)
+        ancestors['morefound'] = int(morefound)
         ancestors['children'] = child
+
         child = [ancestors]
 #         print(id,cat_name)
         id = parent_id
@@ -88,6 +91,7 @@ def find_all_ancestors(id):
             ancestors['name'] = 'All Categories'
             ancestors['value'] = int(data_csv.subtreeProductCount[data_csv.id == 0].values[0])
             ancestors['numChildren'] = int(data_csv.numChildren[data_csv.id == 0].values[0])
+            ancestors['morefound'] = int(1)
             ancestors['children'] = child
 
             return ancestors

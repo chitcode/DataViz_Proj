@@ -88,7 +88,14 @@ var menu = [
     	}
     },
     {
-    	title: 'Show All Children',
+    	title:'Search This Category',
+    	action: function(elm, d, i) {
+        document.getElementById('cat_name').value = d.data.name;
+        updateViz();
+    	}
+    },
+    {
+    	title: 'Show All Sub-Categories',
     	action: function(elm, d, i) {
         create_subViz(d.data.id);
     	}
@@ -98,7 +105,7 @@ var menu = [
 var treemap = d3.treemap()
         .size([width, height])
         .padding(1)
-        .round(true); //true
+        .round(false); //true
 
 var chart = d3.select("#chart").append('svg')
       .attr("width", width_svg + margin.left + margin.right)
@@ -152,8 +159,9 @@ var cells = chart
                 .duration(200)
                 .style("opacity", .9);
             var full_path = makePath(d);
-            div.html("<div class='mover'>"+full_path+"<br/>"+
-                    "Number of Children: "+d.data.numChildren+"<br/></div>")
+            div.html("<div class='mover'>"+full_path+"<br/><br/>"+
+                    "Number of Children: "+d.data.numChildren+"<br/>"+
+                    d.data.morefound+" "+d.data.name+" Cetegories Found </div>")
                 .style("left", (d3.event.pageX+10) + "px")
                 .style("top", (d3.event.pageY - 28) + "px");
             })
@@ -269,7 +277,7 @@ var sub_y = d3.scaleLinear().domain([0, subViz_height]).range([0, subViz_height]
 var sub_treemap = d3.treemap()
     .size([subViz_width, subViz_height])
     .padding(4)
-    .round(true);
+    .round(false);
 
 function create_subViz_map(subVizData){
 
