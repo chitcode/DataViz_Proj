@@ -15,7 +15,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 # FILE_PATH = "/Users/chitrasen/workspace_python/class_works/CS765/"
 FILE_PATH = "data/"
 print("loading data from file")
-data_csv = pd.read_csv('../data/all-nodes.csv')
+data_csv = pd.read_csv('data/all-nodes.csv')
 
 @app.route('/')
 @app.route('/index')
@@ -27,7 +27,7 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'), 'connection.png', mimetype='image/connection.png')
 
 def init():
-    data_csv = pd.read_csv('../data/all-nodes.csv')
+    data_csv = pd.read_csv('data/all-nodes.csv')
     print(data_csv.shape)
     pass
 
