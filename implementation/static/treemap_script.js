@@ -7,7 +7,7 @@ function updateViz(){
   cat_searched = catName;
 if(catName !== null && catName !== ""){
     var request = new XMLHttpRequest();
-    const url='/getnodes?catName='+catName;
+    const url='/getnodes?catName='+encodeURIComponent(catName);
     console.log(url);
     request.open("GET", url);
     request.send();
@@ -100,8 +100,23 @@ var menu = [
         create_subViz(d.data.id);
     	}
     }
-  ]
+  ];
 
+var menu_sub = [
+  {
+    title:'Search This Category',
+    action: function(elm, d, i) {
+      document.getElementById('cat_name').value = d.data.name;
+      updateViz();
+    }
+  },
+    {
+    	title: 'Show All Sub-Categories',
+    	action: function(elm, d, i) {
+        create_subViz(d.data.id);
+    	}
+    }
+];
 var treemap = d3.treemap()
         .size([width, height])
         .padding(1)
@@ -316,8 +331,9 @@ d3.select("#nodeDesc")
                     .duration(200)
                     .style("opacity", .9);
                 var full_path = makePath(d);
-                div.html("<div class='mover'>"+full_path+"<br/>"+
-                        "Number of Children: "+d.data.numChildren+"<br/></div>")
+                div.html("<div class='mover'>"+full_path+"<br/><br/>"+
+                        "Number of Children: "+d.data.numChildren+"<br/>"+
+                        d.data.morefound+" "+d.data.name+" Cetegories Found </div>")
                     .style("left", (d3.event.pageX+10) + "px")
                     .style("top", (d3.event.pageY - 28) + "px");
                 })
@@ -325,7 +341,8 @@ d3.select("#nodeDesc")
                 div.transition()
                     .duration(500)
                     .style("opacity", 0);
-            });
+            })
+            .on('contextmenu', d3.contextMenu(menu_sub));
 
       subcells.append("p")
         .attr("class", "label")

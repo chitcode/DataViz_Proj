@@ -153,13 +153,14 @@ def get_all_children(catId):
     parent_name = data_csv.name[data_csv.id == catId].values[0]
     parent_sub_roduct_count = data_csv.subtreeProductCount[data_csv.id == catId].values[0]
     parent_roduct_count = data_csv.productCount[data_csv.id == catId].values[0]
-
+    parent_morefound = np.sum(data_csv.name == parent_name)
 
     for child_id in children_ids:
         cat_name = data_csv.name[data_csv.id == child_id].values[0]
         sub_roduct_count = data_csv.subtreeProductCount[data_csv.id == child_id].values[0]
         roduct_count = data_csv.productCount[data_csv.id == child_id].values[0]
         numChildren = data_csv.numChildren[data_csv.id == child_id].values[0]
+        child_morefound = np.sum(data_csv.name == cat_name)
 
         child = {}
         child['id'] = int(child_id)
@@ -167,13 +168,15 @@ def get_all_children(catId):
         child['value'] = int(sub_roduct_count)
         child['product_count'] = int(roduct_count)
         child['numChildren'] = int(numChildren)
+        child['morefound'] = int(child_morefound)
         children.append(child)
     parent['id'] = parent_id
     parent['name'] = parent_name
     parent['value'] = int(parent_sub_roduct_count)
     parent['product_count'] = int(parent_roduct_count)
     parent['numChildren'] = len(children_ids)
-    parent['children'] = children
+    parent['morefound'] = int(parent_morefound)
+    parent['children'] = children    
     return parent
 
 if __name__ == '__main__':
