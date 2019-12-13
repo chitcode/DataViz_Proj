@@ -70,11 +70,13 @@ def find_all_ancestors(id):
         cat_name = data_csv.name[data_csv.id == id].values[0]
         parent_id = data_csv.parent[data_csv.id == id].values[0]
         productCount = data_csv.subtreeProductCount[data_csv.id == id].values[0]
+        numChildren = data_csv.numChildren[data_csv.id == id].values[0]
 
         ancestors = {}
         ancestors['id'] = int(id)
         ancestors['name'] = cat_name
         ancestors['value'] = int(productCount)
+        ancestors['numChildren'] = int(numChildren)
         ancestors['children'] = child
         child = [ancestors]
 #         print(id,cat_name)
@@ -84,8 +86,10 @@ def find_all_ancestors(id):
             ancestors = {}
             ancestors['id'] = 0
             ancestors['name'] = 'All Categories'
-            ancestors['value'] = int(0)
+            ancestors['value'] = int(data_csv.subtreeProductCount[data_csv.id == 0].values[0])
+            ancestors['numChildren'] = int(data_csv.numChildren[data_csv.id == 0].values[0])
             ancestors['children'] = child
+
             return ancestors
             break
 
@@ -146,21 +150,25 @@ def get_all_children(catId):
     parent_sub_roduct_count = data_csv.subtreeProductCount[data_csv.id == catId].values[0]
     parent_roduct_count = data_csv.productCount[data_csv.id == catId].values[0]
 
+
     for child_id in children_ids:
         cat_name = data_csv.name[data_csv.id == child_id].values[0]
         sub_roduct_count = data_csv.subtreeProductCount[data_csv.id == child_id].values[0]
         roduct_count = data_csv.productCount[data_csv.id == child_id].values[0]
+        numChildren = data_csv.numChildren[data_csv.id == child_id].values[0]
 
         child = {}
         child['id'] = int(child_id)
         child['name'] = cat_name
         child['value'] = int(sub_roduct_count)
-        child['roduct_count'] = int(roduct_count)
+        child['product_count'] = int(roduct_count)
+        child['numChildren'] = int(numChildren)
         children.append(child)
     parent['id'] = parent_id
     parent['name'] = parent_name
     parent['value'] = int(parent_sub_roduct_count)
     parent['product_count'] = int(parent_roduct_count)
+    parent['numChildren'] = len(children_ids)
     parent['children'] = children
     return parent
 

@@ -1,5 +1,0 @@
-numpy
-pandas
-json5
-jsonschema
-Flask

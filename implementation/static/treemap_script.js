@@ -114,13 +114,15 @@ var div = d3.select("#maintooltip")
           .style("opacity", 0);
 
 function makePath(d){
-  var path="";
+  var path="<b>"+d.data.name+" ["+d.data.value+"]</b>";
   var parent_data = d.parent;
+  var space_counter = 1
   while(parent_data){
-    path = parent_data.data.name+" > "+path;
+    path = path+"</br>"+"&nbsp;&nbsp;".repeat(space_counter)+"&rdsh;" + parent_data.data.name+
+      " ["+parent_data.data.value+"]";
     parent_data = parent_data.parent;
+    space_counter = space_counter+1;
   }
-  path = path+d.data.name;
   return path;
 }
 
@@ -150,8 +152,8 @@ var cells = chart
                 .duration(200)
                 .style("opacity", .9);
             var full_path = makePath(d);
-            div.html(full_path+"<br>"+
-                    "Items: "+d.data.value+"<br/>")
+            div.html("<div class='mover'>"+full_path+"<br/>"+
+                    "Number of Children: "+d.data.numChildren+"<br/></div>")
                 .style("left", (d3.event.pageX+10) + "px")
                 .style("top", (d3.event.pageY - 28) + "px");
             })
@@ -173,8 +175,6 @@ cells
     .append("p")
     .attr("class", "label")
     .text(function(d) { return d.data.name ? d.data.name : "---"; });
-    //.style("font-size", "")
-    //.style("opacity", function(d) { return isOverflowed( d.parent ) ? 1 : 0; });
 
 cells.append("p")
     .attr("class", "vals")
@@ -193,7 +193,7 @@ var parent = d3.select(".up")
         var path="";
         var parent_data = d.parent;
         while(parent_data){
-          path = parent_data.data.name+" > "+path;
+          path = parent_data.data.name+" &#10144; "+path;
           parent_data = parent_data.parent;
         }
         path = path+d.data.name;
@@ -223,7 +223,6 @@ var parent = d3.select(".up")
         cells // show this depth + 1 and below
             .filter(function(d) { return d.depth > currentDepth; })
             .classed("hide", false);
-
     }
 }
 
@@ -264,14 +263,15 @@ var subdiv = d3.select("#subChart").append("svg")
         .style("width", subViz_width + "px")
         .style("height", subViz_height + "px");
 
-function create_subViz_map(subVizData){
-  var sub_x = d3.scaleLinear().domain([0, subViz_width]).range([0, subViz_width]);
-  var sub_y = d3.scaleLinear().domain([0, subViz_height]).range([0, subViz_height]);
+var sub_x = d3.scaleLinear().domain([0, subViz_width]).range([0, subViz_width]);
+var sub_y = d3.scaleLinear().domain([0, subViz_height]).range([0, subViz_height]);
 
-  var sub_treemap = d3.treemap()
-      .size([subViz_width, subViz_height])
-      .padding(4)
-      .round(true);
+var sub_treemap = d3.treemap()
+    .size([subViz_width, subViz_height])
+    .padding(4)
+    .round(true);
+
+function create_subViz_map(subVizData){
 
   subdiv.selectAll("div")
           .remove()
@@ -279,13 +279,21 @@ function create_subViz_map(subVizData){
           .transition()
           .duration(700);
 
+d3.select("#nodeDesc").selectAll("text").remove();
+d3.select("#nodeDesc")
+    .append("text")
+    .style("font-size", "16px")
+    .text("Category: "+subVizData.name+
+          "          ,Sub-Products #: "+subVizData.value+
+          ", Children #:"+subVizData.numChildren);
+
   var sub_nodes = d3.hierarchy(subVizData)
                   .sum(function(d) {return d.value ? 1 : 0; });
 
   treemap(sub_nodes);
   console.log(sub_nodes);
 
-  subdiv.selectAll(".node")
+  var subcells = subdiv.selectAll(".node")
         .data(sub_nodes.descendants())
         .enter()
         .append("xhtml:div")
@@ -295,5 +303,26 @@ function create_subViz_map(subVizData){
         .style("width", function(d) { return sub_x(d.x1) - sub_x(d.x0) + "%"; })
         .style("height", function(d) { return sub_y(d.y1) - sub_y(d.y0) + "%"; })
         .style("background", function(d) {return color_bg(d.data.name)})
+        .on("mouseover", function(d) {
+                div.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                var full_path = makePath(d);
+                div.html("<div class='mover'>"+full_path+"<br/>"+
+                        "Number of Children: "+d.data.numChildren+"<br/></div>")
+                    .style("left", (d3.event.pageX+10) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+                })
+            .on("mouseout", function(d) {
+                div.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+      subcells.append("p")
+        .attr("class", "label")
         .text(function(d) { return d.data.name; });
+      subcells.append("p")
+        .attr("class", "vals")
+            .text(function(d) { return d.data.value ? d.data.value : ""; });
       }
