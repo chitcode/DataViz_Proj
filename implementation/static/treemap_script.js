@@ -117,6 +117,9 @@ var menu_sub = [
     	}
     }
 ];
+
+var format = d3.format(",");
+
 var treemap = d3.treemap()
         .size([width, height])
         .padding(1)
@@ -201,17 +204,14 @@ cells
 
 cells.append("p")
     .attr("class", "vals")
-    .text(function(d) { return d.data.value ? d.data.value : ""; });
+    .text(function(d) { return d.data.value ? format(d.data.value) : ""; });
 
 var parent = d3.select(".up")
     .datum(nodes)
     .on("click", zoom);
 
     function zoom(d) { // http://jsfiddle.net/ramnathv/amszcymq/
-
-        console.log('clicked: ' + d.data.name + ', depth: ' + d.depth);
         currentDepth = d.depth;
-        console.log(d);
 
         var path="";
         var parent_data = d.parent;
@@ -220,7 +220,6 @@ var parent = d3.select(".up")
           parent_data = parent_data.parent;
         }
         path = path+d.data.name;
-        console.log(path);
         document.getElementById("guide").innerHTML = path;
 
         parent.datum(d.parent || nodes);
@@ -302,19 +301,25 @@ function create_subViz_map(subVizData){
           .transition()
           .duration(700);
 
+  var txt = "All Products";
+  subVizData.pathName.forEach(pathBuilder);
+  document.getElementById("nodePath").innerHTML = txt;
+  function pathBuilder(value, index, array) {
+        txt = txt + " &#10144; "+value;
+  }
+
 d3.select("#nodeDesc").selectAll("text").remove();
 d3.select("#nodeDesc")
     .append("text")
     .style("font-size", "16px")
-    .text("Category: "+subVizData.name+
-          "          ,Sub-Products #: "+subVizData.value+
-          ", Children #:"+subVizData.numChildren);
+    .text("Num of Children: "+subVizData.numChildren+
+        ",     Sub Tree Product Count: "+subVizData.value+
+        ",     Products Count :"+subVizData.product_count);
 
   var sub_nodes = d3.hierarchy(subVizData)
-                  .sum(function(d) {return d.value ? 1 : 0; });
+                  .sum(function(d) {return d.value? 1:0;});
 
   treemap(sub_nodes);
-  console.log(sub_nodes);
 
   var subcells = subdiv.selectAll(".node")
         .data(sub_nodes.descendants())
@@ -349,5 +354,5 @@ d3.select("#nodeDesc")
         .text(function(d) { return d.data.name; });
       subcells.append("p")
         .attr("class", "vals")
-            .text(function(d) { return d.data.value ? d.data.value : ""; });
+            .text(function(d) { return d.data.value ? format(d.data.value) : ""; });
       }

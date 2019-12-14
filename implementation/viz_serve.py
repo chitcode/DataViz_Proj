@@ -154,6 +154,7 @@ def get_all_children(catId):
     parent_sub_roduct_count = data_csv.subtreeProductCount[data_csv.id == catId].values[0]
     parent_roduct_count = data_csv.productCount[data_csv.id == catId].values[0]
     parent_morefound = np.sum(data_csv.name == parent_name)
+    pathName = data_csv.pathName[data_csv.id == catId].values[0]
 
     for child_id in children_ids:
         cat_name = data_csv.name[data_csv.id == child_id].values[0]
@@ -176,7 +177,8 @@ def get_all_children(catId):
     parent['product_count'] = int(parent_roduct_count)
     parent['numChildren'] = len(children_ids)
     parent['morefound'] = int(parent_morefound)
-    parent['children'] = children    
+    parent['pathName'] = eval(pathName)
+    parent['children'] = children
     return parent
 
 if __name__ == '__main__':
