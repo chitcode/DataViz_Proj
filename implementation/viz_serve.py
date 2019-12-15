@@ -101,6 +101,7 @@ def find_all_hierarchy(cat_name):
     all_hierarchy = []
     print(data_csv.shape)
     all_cat_ids = data_csv.id.loc[data_csv.name == cat_name].values
+    # all_cat_ids = data_csv.id.loc[data_csv.name.str.lower() == cat_name.lower()].values
     for cat_id in all_cat_ids:
         hierarchy = find_all_ancestors(cat_id)
         all_hierarchy.append(hierarchy)

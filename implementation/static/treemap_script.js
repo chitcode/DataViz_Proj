@@ -1,7 +1,6 @@
 
-
+document.getElementById("up").innerHTML = "&nbsp;";
 var cat_searched;
-
 function updateViz(){
   var catName = document.getElementById('cat_name').value;
   cat_searched = catName;
@@ -152,6 +151,13 @@ function makePath(d){
 }
 
 function createViz(data){
+
+  var paths = document.getElementById("guide").innerHTML;
+  if(paths !== null && paths !== "" && paths != 'All Categories'){
+    document.getElementById("up").innerHTML = "&#8682; UP";
+  }else{
+    document.getElementById("up").innerHTML = "&nbsp;";
+  }
 var nodes = d3.hierarchy(data)
         .sum(function(d) {return d.value ? 1 : 0; });
         //.sort(function(a, b) { return b.height - a.height || b.value - a.value });
@@ -221,7 +227,11 @@ var parent = d3.select(".up")
         }
         path = path+d.data.name;
         document.getElementById("guide").innerHTML = path;
-
+        if(path !== null && path !== "" && path != 'All Categories'){
+          document.getElementById("up").innerHTML = "&#8682; UP";
+        }else{
+          document.getElementById("up").innerHTML = "&nbsp;";
+        }
         parent.datum(d.parent || nodes);
 
         x.domain([d.x0, d.x1]);
