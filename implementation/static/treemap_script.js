@@ -158,8 +158,8 @@ function createViz(data){
   }else{
     document.getElementById("up").innerHTML = "&nbsp;";
   }
-var nodes = d3.hierarchy(data)
-        .sum(function(d) {return d.value ? 1 : 0; });
+var nodes = d3.hierarchy(data);
+        // .sum(function(d) {return d.value ? 1 : 0; });
         //.sort(function(a, b) { return b.height - a.height || b.value - a.value });
 
 var currentDepth = 0;
